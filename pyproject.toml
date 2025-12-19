@@ -1,0 +1,64 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "oakd-scan-gui"
+version = "0.1.0"
+description = "Real-time 3D scanning GUI for OAK-D cameras with dead zone visualization"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+authors = [
+    {name = "Daredevil Project"}
+]
+keywords = ["3d-scanning", "oak-d", "depth-camera", "point-cloud", "robotics"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "depthai>=2.24.0",
+    "opencv-python>=4.8.0",
+    "open3d>=0.17.0",
+    "numpy>=1.24.0",
+    "dearpygui>=1.10.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+    "black",
+    "ruff",
+]
+jetson = [
+    # Jetson-specific builds - install from NVIDIA repos
+]
+
+[project.scripts]
+oakd-scan = "oakd_scan_gui.app:main"
+
+[project.urls]
+"Homepage" = "https://github.com/alanchelmickjr/3d-vision"
+"Bug Tracker" = "https://github.com/alanchelmickjr/3d-vision/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["oakd_scan_gui*"]
+
+[tool.black]
+line-length = 100
+target-version = ['py39', 'py310', 'py311', 'py312']
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "W", "I", "N", "UP"]
+ignore = ["E501"]
