@@ -48,7 +48,9 @@ class OakDCapture:
 
         print(f"Found {len(devices)} OAK-D device(s):")
         for d in devices:
-            print(f"  - {d.getMxId()} ({d.state.name})")
+            # Use getDeviceId() instead of getMxId() for newer depthai versions
+            device_id = d.getDeviceId() if hasattr(d, 'getDeviceId') else "Unknown"
+            print(f"  - {device_id} ({d.state.name})")
 
         # Create pipeline
         self.pipeline = dai.Pipeline()
@@ -75,7 +77,7 @@ class OakDCapture:
         mono_right.setFps(self.FPS)
 
         # Stereo depth config - optimized for close-range scanning
-        stereo.setDefaultProfilePreset(dai.node.StereoDepth.PresetMode.HIGH_ACCURACY)
+        stereo.setDefaultProfilePreset(dai.node.StereoDepth.PresetMode.HIGH_DETAIL)
         stereo.initialConfig.setMedianFilter(dai.MedianFilter.KERNEL_7x7)
         stereo.setLeftRightCheck(True)
         stereo.setExtendedDisparity(False)
@@ -83,8 +85,11 @@ class OakDCapture:
         stereo.setDepthAlign(dai.CameraBoardSocket.CAM_A)  # Align to RGB
 
         # Configure for close-range (sub-1m scanning)
-        config = stereo.initialConfig.get()
-        config.postProcessing.speckleFilter.enable = True
+        # config = stereo.initialConfig.get()
+        config = stereo.initialConfig
+        config.setMedianFilter(dai.MedianFilter.KERNEL_7x7)
+
+        # config.postProcessing.speckleFilter.enable = True
         config.postProcessing.speckleFilter.speckleRange = 50
         config.postProcessing.temporalFilter.enable = True
         config.postProcessing.spatialFilter.enable = True
@@ -92,18 +97,29 @@ class OakDCapture:
         config.postProcessing.spatialFilter.numIterations = 1
         config.postProcessing.thresholdFilter.minRange = 100  # 10cm min
         config.postProcessing.thresholdFilter.maxRange = 2000  # 2m max
-        stereo.initialConfig.set(config)
+        # stereo.initialConfig.set(config)
+
 
         # Link nodes
         mono_left.out.link(stereo.left)
         mono_right.out.link(stereo.right)
 
         # Output queues
-        xout_rgb = self.pipeline.create(dai.node.XLinkOut)
+        if hasattr(dai.node, 'XLinkOut'):
+            xout_rgb = self.pipeline.create(dai.node.XLinkOut)
+        else:
+            # Fallback for depthai 3.x
+            xout_rgb = self.pipeline.createXLinkOut()
+
         xout_rgb.setStreamName("rgb")
         cam_rgb.preview.link(xout_rgb.input)
 
-        xout_depth = self.pipeline.create(dai.node.XLinkOut)
+        if hasattr(dai.node, 'XLinkOut'):
+            xout_depth = self.pipeline.create(dai.node.XLinkOut)
+        else:
+            # Fallback for depthai 3.x
+            xout_depth = self.pipeline.createXLinkOut()
+
         xout_depth.setStreamName("depth")
         stereo.depth.link(xout_depth.input)
 
